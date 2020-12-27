@@ -129,7 +129,6 @@ def DetectRegister(str):
 
 get_bin = lambda x, n: format(x, 'b').zfill(n)
 def GenerateOutPut(lines):
-    f = open("testOut.txt", "w")
     for line in range(0,len(lines)):
         if (isinstance(lines[line], list)):
             if(lines[line][0] in Instructions.keys()):
@@ -144,16 +143,17 @@ def GenerateOutPut(lines):
                     Offset=Offset & 0x3ff
                     f.write(get_bin(Offset, 10))
                 else:
+                    f.write('0000')
                     f.write(Modes[DetectModes(lines[line][1])])
                     f.write(Registers[DetectRegister(lines[line][1])])    
-                    f.write('0000')
 
             elif(len(lines[line])==3):
                 f.write(Modes[DetectModes(lines[line][1])])
                 f.write(Registers[DetectRegister(lines[line][1])]) 
 
                 if(re.fullmatch(("JSR"),lines[line][0])):
-                    Offset=LabelVariables[lines[line][1]]['Address']-line
+                    print(lines[line][1])
+                    Offset=LabelVariables[lines[line][2]]['Address']
                     Offset=Offset & 0xffff
                     f.write('0000\n')
                     f.write(get_bin(Offset, 16))
@@ -165,6 +165,14 @@ def GenerateOutPut(lines):
             
         f.write('\n')         
 
+def WriteVars():
+
+    for var in LabelVariables:
+        if (LabelVariables[var]['Value']) != '$':
+            f.write('\n')           
+            f.write(get_bin(int(LabelVariables[var]['Value']), 16))
+
+            
 Registers={
     "R0":"000",
     "R1":"001",
@@ -232,5 +240,8 @@ ImportantLines=[]
 NoComma=[]
 GetAddresses(LinesNoComments)
 SemiFinalRam=ReplaceVariables(ImportantLines)
+f = open("testOut.txt", "w")
 GenerateOutPut(SemiFinalRam)
+WriteVars()
+#print(LabelVariables)
 
