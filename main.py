@@ -42,7 +42,7 @@ def DetectVariables(line):
     x=False  
     Pc=""
     if(re.fullmatch('JSR',line[0])):
-        Pc=line[2]
+        Pc=line[1]
         x=True
         return line,x,Pc
     for var in Variables:
@@ -89,7 +89,8 @@ def GetAddresses(Lines):
 
             elif(FormattedLine[0].find('DEFINE')==-1):
                 ImportantLines.append(FormattedLine)
-                ImportantLines.append(Pc)    
+                if(FormattedLine[0].find('JSR')==-1):
+                    ImportantLines.append(Pc)    
             Address+=2
         else:
             if(FormattedLine[0].find('DEFINE')==-1 ):
@@ -136,12 +137,18 @@ def GenerateOutPut(lines):
             else:
                 print("Errooor!!")
             if(len(lines[line])==1):
+                f.write('\n')         
                 continue
             elif(len(lines[line])==2):
                 if(re.fullmatch(("^B.*$"),lines[line][0])):
                     Offset=LabelVariables[lines[line][1]]['Address']-line
                     Offset=Offset & 0x3ff
                     f.write(get_bin(Offset, 10))
+                elif(re.fullmatch(("JSR"),lines[line][0])):
+                    Offset=LabelVariables[lines[line][1]]['Address']
+                    Offset=Offset & 0xffff
+                    f.write('0001110000\n')
+                    f.write(get_bin(Offset, 16))    
                 else:
                     f.write('0000')
                     f.write(Modes[DetectModes(lines[line][1])])
@@ -150,16 +157,8 @@ def GenerateOutPut(lines):
             elif(len(lines[line])==3):
                 f.write(Modes[DetectModes(lines[line][1])])
                 f.write(Registers[DetectRegister(lines[line][1])]) 
-
-                if(re.fullmatch(("JSR"),lines[line][0])):
-                    print(lines[line][1])
-                    Offset=LabelVariables[lines[line][2]]['Address']
-                    Offset=Offset & 0xffff
-                    f.write('0000\n')
-                    f.write(get_bin(Offset, 16))
-                else:    
-                    f.write(Modes[DetectModes(lines[line][2])])
-                    f.write(Registers[DetectRegister(lines[line][2])])    
+                f.write(Modes[DetectModes(lines[line][2])])
+                f.write(Registers[DetectRegister(lines[line][2])])    
         else:
             f.write(get_bin(lines[line]& 0xffff, 16))                       
             
@@ -169,8 +168,8 @@ def WriteVars():
 
     for var in LabelVariables:
         if (LabelVariables[var]['Value']) != '$':
-            f.write('\n')           
             f.write(get_bin(int(LabelVariables[var]['Value']), 16))
+            f.write('\n')           
 
             
 Registers={
