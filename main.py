@@ -1,6 +1,6 @@
 import re
 def ReadFile(path):
-    f = open("test.txt", "r")
+    f = open(path, "r")
     txt=f.read()
     txt=txt.upper()
     return txt
@@ -45,24 +45,29 @@ def DetectVariables(line):
         Pc=line[1]
         x=True
         return line,x,Pc
+    if(len(line)>2):
+        if(line[1].find('#')!=-1 and not re.fullmatch('DEFINE',line[0]) ):
+                Pc=line[1][1:]
+                line[1] ='(R7)+'
+                x=True
+        if(line[2].find('#')!=-1 and not re.fullmatch('DEFINE',line[0])):
+                Pc=line[2][1:]
+                line[2] ='(R7)+'
+                x=True        
+
+
     for var in Variables:
         if(len(line)>2):
             if(re.fullmatch(var,line[1]) and not re.fullmatch('DEFINE',line[0]) ):
                 Pc=var
                 line[1] ='X(R7)'
                 x=True
-            elif(line[1].find('#')!=-1 and not re.fullmatch('DEFINE',line[0]) ):
-                Pc=line[1][1:]
-                line[1] ='(R7)+'
-                x=True
+            
             if(re.fullmatch(var,line[2]) and not re.fullmatch('DEFINE',line[0])):
                 Pc=var
                 line[2] ='X(R7)'
                 x=True
-            elif(line[2].find('#')!=-1 and not re.fullmatch('DEFINE',line[0])):
-                Pc=line[2][1:]
-                line[2] ='(R7)+'
-                x=True
+
     return line,x,Pc            
 
 def GetAddresses(Lines):
@@ -78,6 +83,44 @@ def GetAddresses(Lines):
 
         #Detect Variables 
         FormattedLine,Check,Pc=DetectVariables(SplittedLine)
+        if(len(FormattedLine) >2):
+            if(re.fullmatch("^\d*\(R[0-9]\)",FormattedLine[1])):
+                t= FormattedLine[1].find("(")
+                Pc=FormattedLine[1][0:t]
+                ImportantLines.append(FormattedLine)
+                ImportantLines.append(int(Pc))
+                Address+=2
+                Check=True
+                continue
+            if(re.fullmatch("^\d*\(R[0-9]\)",FormattedLine[2])):
+                t= FormattedLine[2].find("(")
+                Pc=FormattedLine[2][0:t]
+                ImportantLines.append(FormattedLine)
+                ImportantLines.append(int(Pc))
+                Address+=2
+                Check=True  
+                continue
+            if(re.fullmatch("@\d*\(R[0-9]\)",FormattedLine[1])):
+                t= FormattedLine[1].find("(")
+                Pc=FormattedLine[1][1:t]
+                ImportantLines.append(FormattedLine)
+                ImportantLines.append(int(Pc))
+                Address+=2
+                Check=True  
+                continue
+            if(re.fullmatch("@\d*\(R[0-9]\)",FormattedLine[2])):
+                t= FormattedLine[2].find("(")
+                Pc=FormattedLine[2][1:t]
+                ImportantLines.append(FormattedLine)
+                ImportantLines.append(int(Pc))
+                Address+=2
+                Check=True  
+                continue
+            
+
+
+            
+
 
         if(FormattedLine[0].find('DEFINE')!=-1):
             LabelVariables[FormattedLine[1]]={"Address":Address,"Value":FormattedLine[2]}
@@ -229,7 +272,8 @@ Instructions={
 
 }
 Address=0    
-txt=ReadFile("BlaBla")
+#Enter Your file path. 
+txt=ReadFile('c6.txt')
 LinesNoComments=[]
 HandleComments(txt)
 Variables={}
@@ -239,8 +283,6 @@ ImportantLines=[]
 NoComma=[]
 GetAddresses(LinesNoComments)
 SemiFinalRam=ReplaceVariables(ImportantLines)
-f = open("testOut.txt", "w")
+f = open("c6Binary.txt", "w")
 GenerateOutPut(SemiFinalRam)
 WriteVars()
-#print(LabelVariables)
-
